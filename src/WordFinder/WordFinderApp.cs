@@ -50,7 +50,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                     return -1;
                 }
 
-                if (!int.TryParse(split[0], out dimY))
+                if (!int.TryParse(split[1], out dimY))
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Invalid size for height: {0}", split[1]);
                     return -1;
