@@ -53,6 +53,16 @@ public sealed partial class WordFinderApp
         [CommandOption("-S|--single")]
         [DefaultValue(false)]
         public bool Single { get; init; }
+        
+        [Description("Don't search along diagonals (quick option)")]
+        [CommandOption("--no-diag|--no-diagonal")]
+        [DefaultValue(false)]
+        public bool NoDiag { get; init; }
+        
+        [Description("Don't search backward (quick option)")]
+        [CommandOption("--no-backward|--no-back")]
+        [DefaultValue(false)]
+        public bool NoBack { get; init; }
 
         public override ValidationResult Validate()
         {

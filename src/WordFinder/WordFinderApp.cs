@@ -87,6 +87,13 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 }
             }
 
+            if (settings.NoDiag)
+                exclude |= ExcludeDirection.DownLeft | ExcludeDirection.DownRight |
+                           ExcludeDirection.UpLeft | ExcludeDirection.UpRight;
+            if (settings.NoBack)
+                exclude |= ExcludeDirection.Left | ExcludeDirection.UpLeft |
+                           ExcludeDirection.Up | ExcludeDirection.UpRight;
+
             var characters = settings.Characters;
             if (characters is null)
                 characters = AnsiConsole.Ask<string>("Characters: ");
@@ -99,6 +106,11 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             {
                 dimX = characters.Length;
                 dimY = 1;
+            }
+            else if (characters.Length != dimX * dimY)
+            {
+                AnsiConsole.MarkupLine("[red]Error:[/] Invalid size");
+                return -1;
             }
             
             var progressBar = AnsiConsole.Progress()
