@@ -21,7 +21,7 @@ public sealed partial class WordFinderApp
         [CommandArgument(1, "[size]")]
         public string? Size { get; init; }
 
-        [CommandOption("-V|--verbose")]
+        [CommandOption("-v|--verbose")]
         [DefaultValue(false)]
         public bool Verbose { get; init; }
 
@@ -34,6 +34,11 @@ public sealed partial class WordFinderApp
         [CommandOption("-M|--minimal")]
         [DefaultValue(false)]
         public bool Minimal { get; init; }
+        
+        [Description("Only search for the first occurrence of a word")]
+        [CommandOption("-S|--single")]
+        [DefaultValue(false)]
+        public bool Single { get; init; }
         
         [Description("Only use one color to display the result")]
         [CommandOption("-s|--single-color")]
@@ -48,12 +53,7 @@ public sealed partial class WordFinderApp
         [CommandOption("-e|--exclude")]
         [DefaultValue(null)]
         public string? Exclude { get; init; }
-        
-        [Description("Only search for the first occurrence of a word")]
-        [CommandOption("-S|--single")]
-        [DefaultValue(false)]
-        public bool Single { get; init; }
-        
+
         [Description("Don't search along diagonals (quick option)")]
         [CommandOption("--no-diag|--no-diagonal")]
         [DefaultValue(false)]
