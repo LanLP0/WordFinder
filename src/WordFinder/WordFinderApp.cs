@@ -30,9 +30,24 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
             if (settings.Verbose)
                 AnsiConsole.WriteLine("Commandline: {0}", Environment.CommandLine);
+            
+            var characters = settings.Characters;
+            if (characters is null)
+                characters = AnsiConsole.Ask<string>("Characters: ");
+            else if (settings.Verbose)
+                AnsiConsole.WriteLine("Characters: {0}", characters);
+
+            characters = characters.ToLowerInvariant();
+            
+            if (settings.Verbose)
+                AnsiConsole.WriteLine("Characters length: {0}", characters.Length);
 
             var dimX = -1;
             var dimY = -1;
+            var prompt = new TextPrompt<string?>("[aqua][[OPTIONAL]][/] Character box size? ")
+                .AllowEmpty().HideDefaultValue().DefaultValue(null);
+            settings.Size ??= prompt.Show(AnsiConsole.Console);
+            
             if (settings.Size is not null)
             {
                 var split = settings.Size.Split('x');
@@ -67,14 +82,25 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 }
             }
 
+            if (dimX is -1) // No value provided
+            {
+                dimX = characters.Length;
+                dimY = 1;
+            }
+            else if (characters.Length != dimX * dimY)
+            {
+                AnsiConsole.MarkupLine("[red]Error:[/] Invalid size");
+                return -1;
+            }
+            
             if (settings.Verbose) AnsiConsole.WriteLine("Size: Height {0} x Width {1}", dimX, dimY);
 
-            var exclude = (ExcludeDirection)0;
-            if (settings.Exclude is not null)
+            var exclusion = (ExcludeDirection)0;
+            if (settings.Exclusion is not null)
             {
-                var excludes = settings.Exclude.Split(',');
+                var exclusions = settings.Exclusion.Split(',');
 
-                foreach (var ex in excludes)
+                foreach (var ex in exclusions)
                 {
                     if (!Enum.TryParse(ex, true, out ExcludeDirection exTmp))
                     {
@@ -88,39 +114,17 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                         return -1;
                     }
 
-                    exclude |= exTmp;
+                    exclusion |= exTmp;
                 }
             }
 
             if (settings.NoDiag)
-                exclude |= ExcludeDirection.DownLeft | ExcludeDirection.DownRight |
+                exclusion |= ExcludeDirection.DownLeft | ExcludeDirection.DownRight |
                            ExcludeDirection.UpLeft | ExcludeDirection.UpRight;
             if (settings.NoBack)
-                exclude |= ExcludeDirection.Left | ExcludeDirection.UpLeft |
+                exclusion |= ExcludeDirection.Left | ExcludeDirection.UpLeft |
                            ExcludeDirection.Up | ExcludeDirection.UpRight;
 
-            var characters = settings.Characters;
-            if (characters is null)
-                characters = AnsiConsole.Ask<string>("Characters: ");
-            else if (settings.Verbose)
-                AnsiConsole.WriteLine("Characters: {0}", characters);
-
-            characters = characters.ToLowerInvariant();
-            
-            if (settings.Verbose)
-                AnsiConsole.WriteLine("Characters length: {0}", characters.Length);
-
-            if (dimX is -1) // No value provided
-            {
-                dimX = characters.Length;
-                dimY = 1;
-            }
-            else if (characters.Length != dimX * dimY)
-            {
-                AnsiConsole.MarkupLine("[red]Error:[/] Invalid size");
-                return -1;
-            }
-            
             var progressBar = AnsiConsole.Progress()
                 .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
                     new RemainingTimeColumn(), new SpinnerColumn());
@@ -129,7 +133,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             if (settings.Verbose)
                 AnsiConsole.WriteLine("Parsed {0} word(s)", finder.Words.Count);
 
-            var resultEnum = finder.Search(characters, dimX, dimY, settings.Wrap, exclude)
+            var resultEnum = finder.Search(characters, dimX, dimY, settings.Wrap, exclusion)
                 .OrderBy(a => a.Word);
 
             var results = settings.Single ? RemoveDuplicates(resultEnum).ToArray() : resultEnum.ToArray();

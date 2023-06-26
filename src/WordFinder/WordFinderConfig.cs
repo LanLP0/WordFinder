@@ -14,7 +14,7 @@ public sealed partial class WordFinderApp
 
         [Description("Size of character box (WidthxHeight)")]
         [CommandArgument(1, "[size]")]
-        public string? Size { get; init; }
+        public string? Size { get; set; }
         
         [Description("Path to word list file (default: words.txt)")]
         [CommandArgument(2, "[wordListPath]")]
@@ -52,7 +52,7 @@ public sealed partial class WordFinderApp
         [Description("Direction(s) to exclude searching from (coma seperated list)")]
         [CommandOption("-e|--exclude")]
         [DefaultValue(null)]
-        public string? Exclude { get; init; }
+        public string? Exclusion { get; init; }
 
         [Description("Don't search along diagonals (quick option)")]
         [CommandOption("--no-diag|--no-diagonal")]
