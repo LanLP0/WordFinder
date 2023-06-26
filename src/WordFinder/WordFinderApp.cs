@@ -1,11 +1,10 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace WordFinder;
 
-public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
+public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 {
     private Color[] _colors = new[]
     {
@@ -32,8 +31,8 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
             var finder = new WordFinder(settings.WordListPath, settings.MinLetter, progressBar);
             if (settings.Verbose) AnsiConsole.WriteLine("Parsed {0} word(s)", finder.Words.Count);
 
-            var x = -1;
-            var y = -1;
+            var dimX = -1;
+            var dimY = -1;
             if (settings.Size is not null)
             {
                 var split = settings.Size.Split('x');
@@ -43,32 +42,32 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                     return -1;
                 }
 
-                if (!int.TryParse(split[0], out x))
+                if (!int.TryParse(split[0], out dimX))
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Invalid size for width: {0}", split[0]);
                     return -1;
                 }
 
-                if (x <= 0)
+                if (dimX <= 0)
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Width must be at least 1");
                     return -1;
                 }
 
-                if (!int.TryParse(split[0], out y))
+                if (!int.TryParse(split[0], out dimY))
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Invalid size for height: {0}", split[1]);
                     return -1;
                 }
 
-                if (y <= 0)
+                if (dimY <= 0)
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Height must be at least 1");
                     return -1;
                 }
             }
 
-            if (settings.Verbose) AnsiConsole.WriteLine("Size: Height {0} x Width {1}", x, y);
+            if (settings.Verbose) AnsiConsole.WriteLine("Size: Height {0} x Width {1}", dimX, dimY);
 
             var characters = settings.Characters;
             if (characters is null)
@@ -77,13 +76,14 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 
             characters = characters.ToLowerInvariant();
 
-            if (x is -1) // No value provided
+            if (dimX is -1) // No value provided
             {
-                x = characters.Length;
-                y = 1;
+                dimX = characters.Length;
+                dimY = 1;
             }
 
-            var results = finder.FindAll(characters, x, y, settings.DiagonalSearch).OrderBy(a => a.Word).ToArray();
+            var results = finder.FindAll(characters, dimX, dimY, settings.Wrap)
+                .OrderBy(a => a.Word).ToArray();
 
             if (results.Length is 0)
             {
@@ -93,9 +93,9 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 
             if (settings.Verbose) AnsiConsole.WriteLine("{0} Result(s)", results.Length);
 
-            var heatmap = BuildCharHeatmap(characters, results, x, settings);
+            var heatmap = BuildCharHeatmap(characters, results, dimX, settings);
 
-            DisplayHeatmap(characters, heatmap, x, y, settings);
+            DisplayHeatmap(characters, heatmap, dimX, dimY, settings);
 
             if (!settings.SingleColor)
             {
@@ -116,7 +116,11 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
             wordTable.AddColumn("Word").AddColumn("Position").AddColumn("Direction");
             wordTable.Title("WORDS", new Style(Color.Yellow));
             foreach (var result in results)
-                wordTable.AddRow(result.Word, (result.Pos + 1).ToString(), result.Direction.ToString());
+            {
+                var (x, y) = WordFinderHelper.IndexToPos(dimX, result.Pos);
+                wordTable.AddRow(result.Word, $"{y + 1}:{x + 1}", result.Direction.ToString());
+            }
+
             AnsiConsole.Write(wordTable);
 
             return 0;
@@ -148,6 +152,7 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                     color = GetColorForHeatmapLevel(heatmap[index]);
                 
                 paragraph.Append(characters[index].ToString(), new Style(color));
+                paragraph.Append(" ");
             }
 
             paragraph.Append("\n");
@@ -164,14 +169,14 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
         return _colors[level];
     }
 
-    private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int dimX,
+    private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int width,
         WordFinderConfig settings)
     {
         var map = new int[characters.Length];
 
         foreach (var result in results)
         {
-            var (x, y) = WordFinderHelper.IndexToPos(result.Pos, dimX);
+            var (x, y) = WordFinderHelper.IndexToPos(width, result.Pos);
 
             var (adjX, adjY) = result.Direction switch
             {
@@ -192,62 +197,22 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 
             for (var i = 0; i < count; i++)
             {
-                var index = WordFinderHelper.PosToIndex(dimX, x, y);
+                var index = WordFinderHelper.PosToIndex(width, x, y);
                 map[index]++;
 
-                x += adjX;
-                y += adjY;
+                if (adjY is 0 && settings.Wrap) // Special case
+                {
+                    index += adjX;
+                    (x, y) = WordFinderHelper.IndexToPos(width, index);
+                }
+                else
+                {
+                    x += adjX;
+                    y += adjY;
+                }
             }
         }
 
         return map;
-    }
-
-    public sealed class WordFinderConfig : CommandSettings
-    {
-        [Description("Path to word list file (default: words.txt)")]
-        [CommandArgument(2, "[wordListPath]")]
-        [DefaultValue("words.txt")]
-        public string WordListPath { get; set; }
-
-        [Description("The characters")]
-        [CommandArgument(0, "[characters]")]
-        public string? Characters { get; init; }
-
-        [Description("Size of character box (WidthxHeight)")]
-        [CommandArgument(1, "[size]")]
-        public string? Size { get; init; }
-
-        [Description("Search for words along diagonals")]
-        [CommandOption("-d|--diagonal")]
-        [DefaultValue(false)]
-        public bool DiagonalSearch { get; init; }
-
-        [CommandOption("-V|--verbose")]
-        [DefaultValue(false)]
-        public bool Verbose { get; init; }
-
-        [Description("Minimum amount of letter a word needs to have in order to be parsed")]
-        [CommandOption("-m|--min-letter")]
-        [DefaultValue(2)]
-        public int MinLetter { get; init; }
-
-        [Description("Only show the first character on the result")]
-        [CommandOption("-M|--minimal")]
-        [DefaultValue(false)]
-        public bool Minimal { get; init; }
-        
-        [Description("Only use one color to display the result")]
-        [CommandOption("-s|--single-color")]
-        [DefaultValue(false)]
-        public bool SingleColor { get; init; }
-
-        public override ValidationResult Validate()
-        {
-            if (!File.Exists(WordListPath))
-                return ValidationResult.Error("Word file not found");
-
-            return ValidationResult.Success();
-        }
     }
 }

@@ -12,7 +12,7 @@ public static class WordFinderHelper
         return y * width + x;
     }
 
-    public static (int x, int y) IndexToPos(int index, int width)
+    public static (int x, int y) IndexToPos(int width, int index)
     {
         return (index % width, index / width);
     }

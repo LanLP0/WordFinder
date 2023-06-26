@@ -55,31 +55,7 @@ public sealed class WordFinder
         _words = tmp.ToArray();
     }
 
-    public IReadOnlyList<FindResult> FindAll(ReadOnlySpan<char> chars, int x, int y, bool diagonal)
-    {
-        if (x <= 1 || y <= 1 || !diagonal)
-            return FindStraight(chars);
-
-        return FindStraight(chars).Concat(FindDiagonal(chars, x, y)).ToList().AsReadOnly();
-    }
-
-    private IReadOnlyList<FindResult> FindStraight(ReadOnlySpan<char> chars)
-    {
-        var results = new List<FindResult>();
-
-        foreach (var word in _words)
-        {
-            var index = chars.IndexOf(word);
-            if (index is -1)
-                continue;
-
-            results.Add(new FindResult(index, Direction.Right, word));
-        }
-
-        return results.AsReadOnly();
-    }
-
-    private IReadOnlyList<FindResult> FindDiagonal(ReadOnlySpan<char> chars, int dimX, int dimY)
+    public IReadOnlyList<FindResult> FindAll(ReadOnlySpan<char> chars, int dimX, int dimY, bool wrap)
     {
         var results = new List<FindResult>();
 
@@ -92,60 +68,195 @@ public sealed class WordFinder
                 if (c != firstChar)
                     continue;
 
-                var (x, y) = WordFinderHelper.IndexToPos(i, dimX);
+                var (x, y) = WordFinderHelper.IndexToPos(dimX, i);
+                
+                if (CheckUp(chars, dimX, x, y, 0, word))
+                    results.Add(new FindResult(i, Direction.Up, word));
+
+                if (CheckDown(chars, dimX, dimY, x, y, 0, word))
+                    results.Add(new FindResult(i, Direction.Down, word));
+                    
+                if (CheckLeft(chars, dimX, i, 0, word, wrap))
+                    results.Add(new FindResult(i, Direction.Left, word));
+                
+                if (CheckRight(chars, dimX, i, 0, word, wrap))
+                    results.Add(new FindResult(i, Direction.Right, word));
+                
+                if (CheckUpLeft(chars, dimX, dimY, x, y, 0, word))
+                    results.Add(new FindResult(i, Direction.UpLeft, word));
+
+                if (CheckUpRight(chars, dimX, dimY, x, y, 0, word))
+                    results.Add(new FindResult(i, Direction.UpRight, word));
 
                 if (CheckDownLeft(chars, dimX, dimY, x, y, 0, word))
-                {
                     results.Add(new FindResult(i, Direction.DownLeft, word));
-                    break;
-                }
 
-                if (!CheckDownRight(chars, dimX, dimY, x, y, 0, word))
-                    continue;
-
-                results.Add(new FindResult(i, Direction.DownRight, word));
-                break;
+                if (CheckDownRight(chars, dimX, dimY, x, y, 0, word))
+                    results.Add(new FindResult(i, Direction.DownRight, word));
             }
         }
+        
+        return results.AsReadOnly();
+    }
 
-        return results;
+    private bool CheckUp(ReadOnlySpan<char> chars, int dimX, int x, int y, int i, string word)
+    {
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
+
+            var index = WordFinderHelper.PosToIndex(dimX, x, y);
+            if (chars[index] != word[i])
+                return false;
+
+            // Move to next value
+            y--;
+            i++;
+            if (y < 0)
+                return i >= word.Length;
+        }
+    }
+
+    private bool CheckDown(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    {
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
+
+            var index = WordFinderHelper.PosToIndex(dimX, x, y);
+            if (chars[index] != word[i])
+                return false;
+
+            // Move to next value
+            y++;
+            i++;
+            if (y >= dimY)
+                return i >= word.Length;
+        }
+    }
+
+    private bool CheckLeft(ReadOnlySpan<char> chars, int width, int index, int i, string word, bool wrap)
+    {
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
+
+            if (chars[index] != word[i])
+                return false;
+
+            var (_, y) = WordFinderHelper.IndexToPos(width, index);
+
+            // Move to next value
+            index--;
+            i++;
+            if (WordFinderHelper.IndexToPos(width, index).y != y && !wrap) return i >= word.Length;
+            if (index <= 0)
+                return i >= word.Length;
+        }
+    }
+
+    private bool CheckRight(ReadOnlySpan<char> chars, int width, int index, int i, string word, bool wrap)
+    {
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
+
+            if (chars[index] != word[i])
+                return false;
+
+            var (_, y) = WordFinderHelper.IndexToPos(width, index);
+
+            // Move to next value
+            index++;
+            i++;
+            if (WordFinderHelper.IndexToPos(width, index).y != y && !wrap)
+                return i >= word.Length;
+            if (index >= chars.Length)
+                return i >= word.Length;
+        }
+    }
+
+    private bool CheckUpLeft(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    {
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
+
+            var index = WordFinderHelper.PosToIndex(dimX, x, y);
+            if (chars[index] != word[i])
+                return false;
+
+            // Move to next value
+            x--;
+            y--;
+            i++;
+            if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
+                return i >= word.Length;
+        }
+    }
+
+    private bool CheckUpRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    {
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
+
+            var index = WordFinderHelper.PosToIndex(dimX, x, y);
+            if (chars[index] != word[i])
+                return false;
+
+            // Move to next value
+            x++;
+            y--;
+            i++;
+            if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
+                return i >= word.Length;
+        }
     }
 
     private bool CheckDownLeft(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
     {
-        if (i >= word.Length)
-            return true;
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
 
-        var index = WordFinderHelper.PosToIndex(dimX, x, y);
-        if (chars[index] != word[i])
-            return false;
+            var index = WordFinderHelper.PosToIndex(dimX, x, y);
+            if (chars[index] != word[i])
+                return false;
 
-        // Move to next value
-        x--;
-        y++;
-        i++;
-        if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
-            return i >= word.Length;
-
-        return CheckDownLeft(chars, dimX, dimY, x, y, i, word);
+            // Move to next value
+            x--;
+            y++;
+            i++;
+            if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
+                return i >= word.Length;
+        }
     }
 
     private bool CheckDownRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
     {
-        if (i >= word.Length)
-            return true;
+        for (;;)
+        {
+            if (i >= word.Length)
+                return true;
 
-        var index = WordFinderHelper.PosToIndex(dimX, x, y);
-        if (chars[index] != word[i])
-            return false;
+            var index = WordFinderHelper.PosToIndex(dimX, x, y);
+            if (chars[index] != word[i])
+                return false;
 
-        // Move to next value
-        x++;
-        y++;
-        i++;
-        if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
-            return i >= word.Length;
-
-        return CheckDownRight(chars, dimX, dimY, x, y, i, word);
+            // Move to next value
+            x++;
+            y++;
+            i++;
+            if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
+                return i >= word.Length;
+        }
     }
 }
