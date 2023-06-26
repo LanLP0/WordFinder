@@ -148,10 +148,11 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
             if (!settings.SingleColor)
             {
+                var maxLevel = heatmap.Max();
                 var colorTable = new Table().Title("[yellow]COLORS[/]")
                     .AddColumn("Color").AddColumn("Level");
 
-                for (var i = 1; i < _colors.Length; i++)
+                for (var i = 1; i < _colors.Length && i <= maxLevel; i++)
                 {
                     var color = _colors[i];
                     colorTable.AddRow($"[{color}]{color}[/]",
