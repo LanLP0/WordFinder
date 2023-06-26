@@ -8,11 +8,6 @@ public sealed partial class WordFinderApp
 {
     public sealed class WordFinderConfig : CommandSettings
     {
-        [Description("Path to word list file (default: words.txt)")]
-        [CommandArgument(2, "[wordListPath]")]
-        [DefaultValue("words.txt")]
-        public string WordListPath { get; set; }
-
         [Description("The characters")]
         [CommandArgument(0, "[characters]")]
         public string? Characters { get; init; }
@@ -20,6 +15,11 @@ public sealed partial class WordFinderApp
         [Description("Size of character box (WidthxHeight)")]
         [CommandArgument(1, "[size]")]
         public string? Size { get; init; }
+        
+        [Description("Path to word list file (default: words.txt)")]
+        [CommandArgument(2, "[wordListPath]")]
+        [DefaultValue("words.txt")]
+        public string WordListPath { get; set; }
 
         [CommandOption("-v|--verbose")]
         [DefaultValue(false)]
