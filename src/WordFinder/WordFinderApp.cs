@@ -7,6 +7,17 @@ namespace WordFinder;
 
 public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 {
+    private Color[] _colors = new[]
+    {
+        Color.Default,
+        Color.Aqua,
+        Color.Blue,
+        Color.Green,
+        Color.Yellow,
+        Color.Red,
+        Color.Purple
+    };
+    
     public override int Execute(CommandContext context, WordFinderConfig settings)
     {
         try
@@ -84,17 +95,22 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 
             var heatmap = BuildCharHeatmap(characters, results, x, settings);
 
-            DisplayHeatmap(characters, heatmap, x, y);
+            DisplayHeatmap(characters, heatmap, x, y, settings);
 
-            var colorTable = new Table().Title("[yellow]COLORS[/]")
-                .AddColumn("Color").AddColumn("Level")
-                .AddRow("[aqua]Aqua[/]", "1")
-                .AddRow("[blue]Blue[/]", "2")
-                .AddRow("[green]Green[/]", "3")
-                .AddRow("[yellow]Yellow[/]", "4")
-                .AddRow("[red]Red[/]", "5")
-                .AddRow("[purple]Purple[/]", "6+");
-            AnsiConsole.Write(colorTable);
+            if (!settings.SingleColor)
+            {
+                var colorTable = new Table().Title("[yellow]COLORS[/]")
+                    .AddColumn("Color").AddColumn("Level");
+
+                for (var i = 1; i < _colors.Length; i++)
+                {
+                    var color = _colors[i];
+                    colorTable.AddRow($"[{color}]{color}[/]",
+                        i != _colors.Length - 1 ? i.ToString() : $"{i}+");
+                }
+                
+                AnsiConsole.Write(colorTable);
+            }
 
             var wordTable = new Table();
             wordTable.AddColumn("Word").AddColumn("Position").AddColumn("Direction");
@@ -115,7 +131,7 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
         }
     }
 
-    private void DisplayHeatmap(ReadOnlySpan<char> characters, int[] heatmap, int x, int y)
+    private void DisplayHeatmap(ReadOnlySpan<char> characters, int[] heatmap, int x, int y, WordFinderConfig settings)
     {
         var paragraph = new Paragraph();
 
@@ -125,8 +141,12 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
             {
                 var index = i * x + j;
 
-                var color = GetColorForHeatmapLevel(heatmap[index]);
-
+                Color color;
+                if (settings.SingleColor)
+                    color = heatmap[index] > 0 ? _colors[1] : _colors[0];
+                else
+                    color = GetColorForHeatmapLevel(heatmap[index]);
+                
                 paragraph.Append(characters[index].ToString(), new Style(color));
             }
 
@@ -138,19 +158,10 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 
     private Color GetColorForHeatmapLevel(int level)
     {
-        if (level >= 6)
-            return Color.Purple;
+        if (level >= _colors.Length)
+            return _colors[_colors.Length - 1];
 
-        return level switch
-        {
-            0 => Color.Default,
-            1 => Color.Aqua,
-            2 => Color.Blue,
-            3 => Color.Green,
-            4 => Color.Yellow,
-            5 => Color.Red,
-            _ => throw new UnreachableException()
-        };
+        return _colors[level];
     }
 
     private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int dimX,
@@ -225,6 +236,11 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
         [CommandOption("-M|--minimal")]
         [DefaultValue(false)]
         public bool Minimal { get; init; }
+        
+        [Description("Only use one color to display the result")]
+        [CommandOption("-s|--single-color")]
+        [DefaultValue(false)]
+        public bool SingleColor { get; init; }
 
         public override ValidationResult Validate()
         {
