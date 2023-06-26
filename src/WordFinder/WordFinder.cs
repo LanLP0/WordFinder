@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Spectre.Console;
 
 namespace WordFinder;
@@ -7,18 +6,18 @@ public sealed class WordFinder
 {
     private string[] _words;
 
-    public IReadOnlyCollection<string> Words => _words;
-
     public WordFinder(string pathToWordFile, int minLetter, Progress progressBar)
     {
         progressBar.Start(ctx =>
         {
             var words = Parse(pathToWordFile);
-            
+
             var task = ctx.AddTask("Parse word file", true, words.Length);
             VerifyAndSet(words, minLetter, task);
         });
     }
+
+    public IReadOnlyCollection<string> Words => _words;
 
     private string[] Parse(string pathToWordFile)
     {
@@ -28,13 +27,13 @@ public sealed class WordFinder
         if (words.Length is 0)
             throw new Exception("The word file cannot be empty");
 
-        return words.Split(new []{'\n', '\r'}, StringSplitOptions.RemoveEmptyEntries);
+        return words.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
     }
 
     private void VerifyAndSet(string[] words, int minLetter, ProgressTask task)
     {
         var tmp = new HashSet<string>();
-        
+
         foreach (var word in words)
         {
             if (string.IsNullOrWhiteSpace(word))
@@ -42,7 +41,7 @@ public sealed class WordFinder
                 task.Increment(1);
                 continue;
             }
-            
+
             if (word.Length < minLetter)
             {
                 task.Increment(1);
@@ -73,17 +72,17 @@ public sealed class WordFinder
             var index = chars.IndexOf(word);
             if (index is -1)
                 continue;
-            
+
             results.Add(new FindResult(index, Direction.Right, word));
         }
-        
+
         return results.AsReadOnly();
     }
 
     private IReadOnlyList<FindResult> FindDiagonal(ReadOnlySpan<char> chars, int dimX, int dimY)
     {
         var results = new List<FindResult>();
-        
+
         foreach (var word in _words)
         {
             var firstChar = word[0];
@@ -93,7 +92,7 @@ public sealed class WordFinder
                 if (c != firstChar)
                     continue;
 
-                var (x, y) = IndexToPos(i, dimX);
+                var (x, y) = WordFinderHelper.IndexToPos(i, dimX);
 
                 if (CheckDownLeft(chars, dimX, dimY, x, y, 0, word))
                 {
@@ -103,7 +102,7 @@ public sealed class WordFinder
 
                 if (!CheckDownRight(chars, dimX, dimY, x, y, 0, word))
                     continue;
-                
+
                 results.Add(new FindResult(i, Direction.DownRight, word));
                 break;
             }
@@ -116,52 +115,37 @@ public sealed class WordFinder
     {
         if (i >= word.Length)
             return true;
-        
-        var index = PosToIndex(dimX, x, y);
+
+        var index = WordFinderHelper.PosToIndex(dimX, x, y);
         if (chars[index] != word[i])
             return false;
-        
+
         // Move to next value
         x--;
         y++;
         i++;
-        if (!PosInbound(x, y, dimX, dimY))
+        if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
             return i >= word.Length;
 
         return CheckDownLeft(chars, dimX, dimY, x, y, i, word);
     }
-    
+
     private bool CheckDownRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
     {
         if (i >= word.Length)
             return true;
-        
-        var index = PosToIndex(dimX, x, y);
+
+        var index = WordFinderHelper.PosToIndex(dimX, x, y);
         if (chars[index] != word[i])
             return false;
-        
+
         // Move to next value
         x++;
         y++;
         i++;
-        if (!PosInbound(x, y, dimX, dimY))
+        if (!WordFinderHelper.PosInbound(x, y, dimX, dimY))
             return i >= word.Length;
 
         return CheckDownRight(chars, dimX, dimY, x, y, i, word);
-    }
-
-    private bool PosInbound(int x, int y, int dimX, int dimY)
-    {
-        return x >= 0 && x < dimX && y >= 0 && y < dimY;
-    }
-
-    private int PosToIndex(int width, int x, int y)
-    {
-        return y * width + x;
-    }
-
-    private (int x, int y) IndexToPos(int index, int width)
-    {
-        return (index % width, index / width);
     }
 }

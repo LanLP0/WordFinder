@@ -7,44 +7,6 @@ namespace WordFinder;
 
 public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 {
-    public sealed class WordFinderConfig : CommandSettings
-    {
-        [Description("Path to word list file (default: words.txt)")]
-        [CommandArgument(2, "[wordListPath]")]
-        [DefaultValue("words.txt")]
-        public string WordListPath { get; set; }
-
-        [Description("The characters")]
-        [CommandArgument(0, "[characters]")]
-        public string? Characters { get; init; }
-
-        [Description("Size of character box (WidthxHeight)")]
-        [CommandArgument(1, "[size]")]
-        public string? Size { get; init; }
-
-        [Description("Search for words along diagonals")]
-        [CommandOption("-d|--diagonal")]
-        [DefaultValue(false)]
-        public bool DiagonalSearch { get; init; }
-        
-        [CommandOption("-V|--verbose")]
-        [DefaultValue(false)]
-        public bool Verbose { get; init; }
-        
-        [Description("Minimum amount of letter a word needs to have in order to be parsed")]
-        [CommandOption("-m|--min-letter")]
-        [DefaultValue(2)]
-        public int MinLetter { get; init; }
-
-        public override ValidationResult Validate()
-        {
-            if (!File.Exists(WordListPath))
-                return ValidationResult.Error("Word file not found");
-
-            return ValidationResult.Success();
-        }
-    }
-
     public override int Execute(CommandContext context, WordFinderConfig settings)
     {
         try
@@ -53,20 +15,11 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
             settings.WordListPath = Path.GetFullPath(settings.WordListPath);
             AnsiConsole.Markup("Word list path: {0}", settings.WordListPath);
             var progressBar = AnsiConsole.Progress()
-                .Columns(new ProgressColumn[] 
-                {
-                    new TaskDescriptionColumn(),    // Task description
-                    new ProgressBarColumn(),        // Progress bar
-                    new PercentageColumn(),         // Percentage
-                    new RemainingTimeColumn(),      // Remaining time
-                    new SpinnerColumn(),            // Spinner
-                });
+                .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
+                    new RemainingTimeColumn(), new SpinnerColumn());
             var finder = new WordFinder(settings.WordListPath, settings.MinLetter, progressBar);
-            if (settings.Verbose)
-            {
-                AnsiConsole.WriteLine("Parsed {0} word(s)", finder.Words.Count);
-            }
-            
+            if (settings.Verbose) AnsiConsole.WriteLine("Parsed {0} word(s)", finder.Words.Count);
+
             var x = -1;
             var y = -1;
             if (settings.Size is not null)
@@ -89,13 +42,13 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                     AnsiConsole.MarkupLine("[red]Error:[/] Width must be at least 1");
                     return -1;
                 }
-                 
+
                 if (!int.TryParse(split[0], out y))
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Invalid size for height: {0}", split[1]);
                     return -1;
                 }
-                
+
                 if (y <= 0)
                 {
                     AnsiConsole.MarkupLine("[red]Error:[/] Height must be at least 1");
@@ -103,19 +56,12 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                 }
             }
 
-            if (settings.Verbose)
-            {
-                AnsiConsole.WriteLine("Size: Height {0} x Width {1}", x, y);
-            }
+            if (settings.Verbose) AnsiConsole.WriteLine("Size: Height {0} x Width {1}", x, y);
 
             var characters = settings.Characters;
             if (characters is null)
-            {
                 characters = AnsiConsole.Ask<string>("Characters: ");
-            } else if (settings.Verbose)
-            {
-                AnsiConsole.WriteLine("Characters: {0}", characters);
-            }
+            else if (settings.Verbose) AnsiConsole.WriteLine("Characters: {0}", characters);
 
             characters = characters.ToLowerInvariant();
 
@@ -132,13 +78,10 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                 AnsiConsole.WriteLine("No word(s) found");
                 return 0;
             }
-            
-            if (settings.Verbose)
-            {
-                AnsiConsole.WriteLine("{0} Result(s)", results.Count);
-            }
 
-            var heatmap = BuildCharHeatmap(characters, results, x);
+            if (settings.Verbose) AnsiConsole.WriteLine("{0} Result(s)", results.Count);
+
+            var heatmap = BuildCharHeatmap(characters, results, x, settings);
 
             DisplayHeatmap(characters, heatmap, x, y);
 
@@ -151,16 +94,14 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                 .AddRow("[red]Red[/]", "5")
                 .AddRow("[purple]Purple[/]", "6+");
             AnsiConsole.Write(colorTable);
-            
+
             var wordTable = new Table();
             wordTable.AddColumn("Word").AddColumn("Position").AddColumn("Direction");
-            wordTable.Title("WORDS", new Style(foreground: Color.Yellow));
+            wordTable.Title("WORDS", new Style(Color.Yellow));
             foreach (var result in results)
-            {
                 wordTable.AddRow(result.Word, (result.Pos + 1).ToString(), result.Direction.ToString());
-            }
             AnsiConsole.Write(wordTable);
-            
+
             return 0;
         }
         catch (Exception e)
@@ -185,12 +126,12 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 
                 var color = GetColorForHeatmapLevel(heatmap[index]);
 
-                paragraph.Append(characters[index].ToString(), new Style(foreground: color));
+                paragraph.Append(characters[index].ToString(), new Style(color));
             }
 
             paragraph.Append("\n");
         }
-        
+
         AnsiConsole.Write(paragraph);
     }
 
@@ -211,41 +152,85 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
         };
     }
 
-    private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int width)
+    private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int dimX,
+        WordFinderConfig settings)
     {
         var map = new int[characters.Length];
 
         foreach (var result in results)
         {
-            switch (result.Direction)
+            var (x, y) = WordFinderHelper.IndexToPos(result.Pos, dimX);
+
+            var (adjX, adjY) = result.Direction switch
             {
-                case Direction.Right:
-                    for (var i = 0; i < result.Word.Length; i++)
-                    {
-                        map[i + result.Pos]++;
-                    }
-                    break;
-                case Direction.DownLeft:
-                    var pos = result.Pos;
-                    for (var i = 0; i < result.Word.Length; i++)
-                    {
-                        map[pos]++;
-                        pos += width - 1;
-                    }
-                    break;
-                case Direction.DownRight:
-                    var pos1 = result.Pos;
-                    for (var i = 0; i < result.Word.Length; i++)
-                    {
-                        map[pos1]++;
-                        pos1 += width + 1;
-                    }
-                    break;
-                default:
-                    throw new UnreachableException();
+                Direction.Right => (1, 0),
+                Direction.Left => (-1, 0),
+                Direction.Up => (0, -1),
+                Direction.Down => (0, 1),
+                Direction.DownLeft => (-1, 1),
+                Direction.DownRight => (1, 1),
+                Direction.UpLeft => (-1, -1),
+                Direction.UpRight => (1, -1),
+                _ => throw new UnreachableException()
+            };
+
+            var count = result.Word.Length;
+            if (settings.Minimal)
+                count = 1;
+
+            for (var i = 0; i < count; i++)
+            {
+                var index = WordFinderHelper.PosToIndex(dimX, x, y);
+                map[index]++;
+
+                x += adjX;
+                y += adjY;
             }
         }
 
         return map;
+    }
+
+    public sealed class WordFinderConfig : CommandSettings
+    {
+        [Description("Path to word list file (default: words.txt)")]
+        [CommandArgument(2, "[wordListPath]")]
+        [DefaultValue("words.txt")]
+        public string WordListPath { get; set; }
+
+        [Description("The characters")]
+        [CommandArgument(0, "[characters]")]
+        public string? Characters { get; init; }
+
+        [Description("Size of character box (WidthxHeight)")]
+        [CommandArgument(1, "[size]")]
+        public string? Size { get; init; }
+
+        [Description("Search for words along diagonals")]
+        [CommandOption("-d|--diagonal")]
+        [DefaultValue(false)]
+        public bool DiagonalSearch { get; init; }
+
+        [CommandOption("-V|--verbose")]
+        [DefaultValue(false)]
+        public bool Verbose { get; init; }
+
+        [Description("Minimum amount of letter a word needs to have in order to be parsed")]
+        [CommandOption("-m|--min-letter")]
+        [DefaultValue(2)]
+        public int MinLetter { get; init; }
+
+        [Description("Only show the first character on the result")]
+        [CommandOption("-M|--minimal")]
+        [DefaultValue(false)]
+        public bool Minimal { get; init; }
+
+        public override ValidationResult Validate()
+        {
+            if (!File.Exists(WordListPath))
+                return ValidationResult.Error("Word file not found");
+
+            return ValidationResult.Success();
+        }
     }
 }

@@ -8,14 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Spectre.Console.Cli" Version="0.47.0" />
+        <PackageReference Include="Spectre.Console.Cli" Version="0.47.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="words.txt" />
-      <AdditionalFiles Include="words.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </AdditionalFiles>
+        <None Remove="words.txt"/>
+        <AdditionalFiles Include="words.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </AdditionalFiles>
     </ItemGroup>
 
 </Project>
