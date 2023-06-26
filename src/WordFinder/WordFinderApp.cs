@@ -102,6 +102,9 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 AnsiConsole.WriteLine("Characters: {0}", characters);
 
             characters = characters.ToLowerInvariant();
+            
+            if (settings.Verbose)
+                AnsiConsole.WriteLine("Characters length: {0}", characters.Length);
 
             if (dimX is -1) // No value provided
             {
