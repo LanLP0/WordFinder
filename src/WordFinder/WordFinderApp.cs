@@ -24,7 +24,8 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             AnsiConsole.MarkupLine("Press [yellow]Ctrl-C[/] to stop");
             settings.WordListPath = Path.GetFullPath(settings.WordListPath);
             AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
-            AnsiConsole.WriteLine("Commandline: {0}", Environment.CommandLine);
+            if (settings.Verbose)
+                AnsiConsole.WriteLine("Commandline: {0}", Environment.CommandLine);
 
             var dimX = -1;
             var dimY = -1;
