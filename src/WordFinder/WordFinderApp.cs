@@ -13,7 +13,8 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
         {
             AnsiConsole.MarkupLine("Press [yellow]Ctrl-C[/] to stop");
             settings.WordListPath = Path.GetFullPath(settings.WordListPath);
-            AnsiConsole.Markup("Word list path: {0}", settings.WordListPath);
+            AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
+            AnsiConsole.Write("Commandline: {0}", Environment.CommandLine);
             var progressBar = AnsiConsole.Progress()
                 .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
                     new RemainingTimeColumn(), new SpinnerColumn());
@@ -71,15 +72,15 @@ public sealed class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
                 y = 1;
             }
 
-            var results = finder.FindAll(characters, x, y, settings.DiagonalSearch);
+            var results = finder.FindAll(characters, x, y, settings.DiagonalSearch).OrderBy(a => a.Word).ToArray();
 
-            if (results.Count is 0)
+            if (results.Length is 0)
             {
                 AnsiConsole.WriteLine("No word(s) found");
                 return 0;
             }
 
-            if (settings.Verbose) AnsiConsole.WriteLine("{0} Result(s)", results.Count);
+            if (settings.Verbose) AnsiConsole.WriteLine("{0} Result(s)", results.Length);
 
             var heatmap = BuildCharHeatmap(characters, results, x, settings);
 
