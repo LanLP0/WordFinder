@@ -21,11 +21,6 @@ public sealed partial class WordFinderApp
         [CommandArgument(1, "[size]")]
         public string? Size { get; init; }
 
-        // [Description("Search for words along diagonals")]
-        // [CommandOption("-d|--diagonal")]
-        // [DefaultValue(false)]
-        // public bool DiagonalSearch { get; init; }
-
         [CommandOption("-V|--verbose")]
         [DefaultValue(false)]
         public bool Verbose { get; init; }
@@ -48,6 +43,16 @@ public sealed partial class WordFinderApp
         [CommandOption("-w|--wrap")]
         [DefaultValue(true)]
         public bool Wrap { get; init; }
+        
+        [Description("Direction(s) to exclude searching from (coma seperated list)")]
+        [CommandOption("-e|--exclude")]
+        [DefaultValue(null)]
+        public string? Exclude { get; init; }
+        
+        [Description("Only search for the first occurrence of a word")]
+        [CommandOption("-S|--single")]
+        [DefaultValue(false)]
+        public bool Single { get; init; }
 
         public override ValidationResult Validate()
         {

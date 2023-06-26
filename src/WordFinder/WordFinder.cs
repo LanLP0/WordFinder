@@ -55,7 +55,8 @@ public sealed class WordFinder
         _words = tmp.ToArray();
     }
 
-    public IReadOnlyList<FindResult> FindAll(ReadOnlySpan<char> chars, int dimX, int dimY, bool wrap)
+    public IReadOnlyList<FindResult> Search(ReadOnlySpan<char> chars, int dimX, int dimY, bool wrap,
+        ExcludeDirection exclude)
     {
         var results = new List<FindResult>();
 
@@ -70,28 +71,28 @@ public sealed class WordFinder
 
                 var (x, y) = WordFinderHelper.IndexToPos(dimX, i);
                 
-                if (CheckUp(chars, dimX, x, y, 0, word))
+                if ((exclude & ExcludeDirection.Up) == 0 && CheckUp(chars, dimX, x, y, 0, word))
                     results.Add(new FindResult(i, Direction.Up, word));
 
-                if (CheckDown(chars, dimX, dimY, x, y, 0, word))
+                if ((exclude & ExcludeDirection.Down) == 0 && CheckDown(chars, dimX, dimY, x, y, 0, word))
                     results.Add(new FindResult(i, Direction.Down, word));
                     
-                if (CheckLeft(chars, dimX, i, 0, word, wrap))
+                if ((exclude & ExcludeDirection.Left) == 0 && CheckLeft(chars, dimX, i, 0, word, wrap))
                     results.Add(new FindResult(i, Direction.Left, word));
                 
-                if (CheckRight(chars, dimX, i, 0, word, wrap))
+                if ((exclude & ExcludeDirection.Right) == 0 && CheckRight(chars, dimX, i, 0, word, wrap))
                     results.Add(new FindResult(i, Direction.Right, word));
                 
-                if (CheckUpLeft(chars, dimX, dimY, x, y, 0, word))
+                if ((exclude & ExcludeDirection.UpLeft) == 0 && CheckUpLeft(chars, dimX, dimY, x, y, 0, word))
                     results.Add(new FindResult(i, Direction.UpLeft, word));
 
-                if (CheckUpRight(chars, dimX, dimY, x, y, 0, word))
+                if ((exclude & ExcludeDirection.UpRight) == 0 && CheckUpRight(chars, dimX, dimY, x, y, 0, word))
                     results.Add(new FindResult(i, Direction.UpRight, word));
 
-                if (CheckDownLeft(chars, dimX, dimY, x, y, 0, word))
+                if ((exclude & ExcludeDirection.DownLeft) == 0 && CheckDownLeft(chars, dimX, dimY, x, y, 0, word))
                     results.Add(new FindResult(i, Direction.DownLeft, word));
 
-                if (CheckDownRight(chars, dimX, dimY, x, y, 0, word))
+                if ((exclude & ExcludeDirection.DownRight) == 0 && CheckDownRight(chars, dimX, dimY, x, y, 0, word))
                     results.Add(new FindResult(i, Direction.DownRight, word));
             }
         }

@@ -25,11 +25,6 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             settings.WordListPath = Path.GetFullPath(settings.WordListPath);
             AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
             AnsiConsole.Write("Commandline: {0}", Environment.CommandLine);
-            var progressBar = AnsiConsole.Progress()
-                .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
-                    new RemainingTimeColumn(), new SpinnerColumn());
-            var finder = new WordFinder(settings.WordListPath, settings.MinLetter, progressBar);
-            if (settings.Verbose) AnsiConsole.WriteLine("Parsed {0} word(s)", finder.Words.Count);
 
             var dimX = -1;
             var dimY = -1;
@@ -69,10 +64,34 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
             if (settings.Verbose) AnsiConsole.WriteLine("Size: Height {0} x Width {1}", dimX, dimY);
 
+            var exclude = (ExcludeDirection)0;
+            if (settings.Exclude is not null)
+            {
+                var excludes = settings.Exclude.Split(',');
+
+                foreach (var ex in excludes)
+                {
+                    if (!Enum.TryParse(ex, true, out ExcludeDirection exTmp))
+                    {
+                        AnsiConsole.MarkupLine("[red]Error:[/] Invalid direction {0}", ex);
+                        const string opString = "Options are: " +
+                            $"{nameof(ExcludeDirection.Up)}, {nameof(ExcludeDirection.Down)}, " +
+                            $"{nameof(ExcludeDirection.Left)}, {nameof(ExcludeDirection.Right)}, " +
+                            $"{nameof(ExcludeDirection.UpLeft)}, {nameof(ExcludeDirection.UpRight)}, " +
+                            $"{nameof(ExcludeDirection.DownLeft)}, {nameof(ExcludeDirection.DownRight)}";
+                        AnsiConsole.WriteLine(opString);
+                        return -1;
+                    }
+
+                    exclude |= exTmp;
+                }
+            }
+
             var characters = settings.Characters;
             if (characters is null)
                 characters = AnsiConsole.Ask<string>("Characters: ");
-            else if (settings.Verbose) AnsiConsole.WriteLine("Characters: {0}", characters);
+            else if (settings.Verbose)
+                AnsiConsole.WriteLine("Characters: {0}", characters);
 
             characters = characters.ToLowerInvariant();
 
@@ -81,10 +100,20 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 dimX = characters.Length;
                 dimY = 1;
             }
+            
+            var progressBar = AnsiConsole.Progress()
+                .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
+                    new RemainingTimeColumn(), new SpinnerColumn());
+            
+            var finder = new WordFinder(settings.WordListPath, settings.MinLetter, progressBar);
+            if (settings.Verbose)
+                AnsiConsole.WriteLine("Parsed {0} word(s)", finder.Words.Count);
 
-            var results = finder.FindAll(characters, dimX, dimY, settings.Wrap)
-                .OrderBy(a => a.Word).ToArray();
+            var resultEnum = finder.Search(characters, dimX, dimY, settings.Wrap, exclude)
+                .OrderBy(a => a.Word);
 
+            var results = settings.Single ? RemoveDuplicates(resultEnum).ToArray() : resultEnum.ToArray();
+            
             if (results.Length is 0)
             {
                 AnsiConsole.WriteLine("No word(s) found");
@@ -214,5 +243,19 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
         }
 
         return map;
+    }
+
+    private IEnumerable<FindResult> RemoveDuplicates(IEnumerable<FindResult> results)
+    {
+        var lastWord = string.Empty; // This is normally invalid
+
+        foreach (var result in results)
+        {
+            if (result.Word == lastWord)
+                continue;
+
+            lastWord = result.Word;
+            yield return result;
+        }
     }
 }
