@@ -9,12 +9,16 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
     private Color[] _colors = new[]
     {
         Color.Default,
+        Color.Yellow,
         Color.Aqua,
         Color.Blue,
-        Color.Green,
-        Color.Yellow,
+        Color.Lime,
         Color.Red,
-        Color.Purple
+        Color.Olive,
+        Color.Fuchsia,
+        Color.Grey,
+        Color.Maroon,
+        Color.Navy
     };
     
     public override int Execute(CommandContext context, WordFinderConfig settings)
