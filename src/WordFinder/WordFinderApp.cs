@@ -150,22 +150,6 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
             DisplayHeatmap(characters, heatmap, dimX, dimY, settings);
 
-            if (!settings.SingleColor)
-            {
-                var maxLevel = heatmap.Max();
-                var colorTable = new Table().Title("[yellow]COLORS[/]")
-                    .AddColumn("Color").AddColumn("Level");
-
-                for (var i = 1; i < _colors.Length && i <= maxLevel; i++)
-                {
-                    var color = _colors[i];
-                    colorTable.AddRow($"[{color}]{color}[/]",
-                        i != _colors.Length - 1 ? i.ToString() : $"{i}+");
-                }
-                
-                AnsiConsole.Write(colorTable);
-            }
-
             var wordTable = new Table();
             wordTable.AddColumn("Word").AddColumn("Position").AddColumn("Direction");
             wordTable.Title("WORDS", new Style(Color.Yellow));
@@ -175,7 +159,27 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 wordTable.AddRow(result.Word, $"{y + 1}:{x + 1}", result.Direction.ToString());
             }
 
-            AnsiConsole.Write(wordTable);
+            if (!settings.SingleColor)
+            {
+                var maxLevel = heatmap.Max();
+                var colorTable = new Table().Title("COLORS", new Style(Color.Yellow))
+                    .AddColumn("Color").AddColumn("Level");
+
+                for (var i = 1; i < _colors.Length && i <= maxLevel; i++)
+                {
+                    var color = _colors[i];
+                    colorTable.AddRow($"[{color}]{color}[/]",
+                        i != _colors.Length - 1 ? i.ToString() : $"{i}+");
+                }
+                
+                var columns = new Columns(wordTable, colorTable);
+                columns.Expand = false;
+                AnsiConsole.Write(columns);
+            }
+            else
+            {
+                AnsiConsole.Write(wordTable);
+            }
 
             return 0;
         }
