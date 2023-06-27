@@ -7,7 +7,7 @@ A *flexible - beautiful - simple* cli app to find words from letters
 2. Run the project `dotnet run -c Release`
 ## Usage  
 ```
-WordFinder [characters] [size] [wordListPath] [OPTIONS]
+    WordFinder [characters] [size] [wordListPath] [OPTIONS]
 
 ARGUMENTS:
     [characters]      The characters
@@ -18,14 +18,16 @@ OPTIONS:
                           DEFAULT
     -h, --help                       Prints help information
     -v, --verbose
-    -m, --min-letter      2          Minimum amount of letter a word needs to have in order to be parsed
+    -m, --min-letter      2          Minimum amount of letter a word needs to have in order to be searched for
     -M, --minimal                    Only show the first character on the result
     -S, --single                     Only search for the first occurrence of a word
     -s, --single-color               Only use one color to display the result
-    -w, --wrap            True
+    -w, --wrap            True       Allow words to be wrapped around the left and right side of the character box
+        --no-wrap                    Turn off wrapping (This have higher priority than --wrap)
     -e, --exclude                    Direction(s) to exclude searching from (coma seperated list)
-        --no-diag                    Don't search along diagonals (quick option)
-        --no-backward                Don't search backward (quick option)
+                                     (Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)
+        --no-diag                    Don't search along diagonals (shorthand)
+        --no-backward                Don't search backward (shorthand)
 ```
 ## Contributing  
 

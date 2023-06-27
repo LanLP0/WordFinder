@@ -25,7 +25,7 @@ public sealed partial class WordFinderApp
         [DefaultValue(false)]
         public bool Verbose { get; init; }
 
-        [Description("Minimum amount of letter a word needs to have in order to be parsed")]
+        [Description("Minimum amount of letter a word needs to have in order to be searched for")]
         [CommandOption("-m|--min-letter")]
         [DefaultValue(2)]
         public int MinLetter { get; init; }
@@ -45,21 +45,27 @@ public sealed partial class WordFinderApp
         [DefaultValue(false)]
         public bool SingleColor { get; init; }
         
+        [Description("Allow words to be wrapped around the left and right side of the character box")]
         [CommandOption("-w|--wrap")]
         [DefaultValue(true)]
-        public bool Wrap { get; init; }
+        public bool Wrap { get; set; }
         
-        [Description("Direction(s) to exclude searching from (coma seperated list)")]
+        [Description("Turn off wrapping (This have higher priority than --wrap)")]
+        [CommandOption("--no-wrap")]
+        [DefaultValue(false)]
+        public bool NoWrap { get; init; }
+        
+        [Description("Direction(s) to exclude searching from (coma seperated list)\n(Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)")]
         [CommandOption("-e|--exclude")]
         [DefaultValue(null)]
         public string? Exclusion { get; init; }
 
-        [Description("Don't search along diagonals (quick option)")]
+        [Description("Don't search along diagonals (shorthand)")]
         [CommandOption("--no-diag|--no-diagonal")]
         [DefaultValue(false)]
         public bool NoDiag { get; init; }
         
-        [Description("Don't search backward (quick option)")]
+        [Description("Don't search backward (shorthand)")]
         [CommandOption("--no-backward|--no-back")]
         [DefaultValue(false)]
         public bool NoBack { get; init; }

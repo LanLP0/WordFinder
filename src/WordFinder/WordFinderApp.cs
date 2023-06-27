@@ -6,8 +6,7 @@ namespace WordFinder;
 
 public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 {
-    private Color[] _colors = new[]
-    {
+    private static readonly Color[] Colors = {
         Color.Default,
         Color.Yellow,
         Color.Aqua,
@@ -26,11 +25,20 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
         try
         {
             AnsiConsole.MarkupLine("Press [yellow]Ctrl-C[/] to stop");
-            settings.WordListPath = Path.GetFullPath(settings.WordListPath);
-            AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
+            
             if (settings.Verbose)
                 AnsiConsole.WriteLine("Commandline: {0}", Environment.CommandLine);
             
+            // Setup
+            
+            settings.WordListPath = Path.GetFullPath(settings.WordListPath);
+            AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
+
+            if (settings.NoWrap)
+                settings.Wrap = false;
+            
+            // Characters
+
             var characters = settings.Characters;
             if (characters is null)
                 characters = AnsiConsole.Ask<string>("Characters: ");
@@ -41,12 +49,17 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             
             if (settings.Verbose)
                 AnsiConsole.WriteLine("Characters length: {0}", characters.Length);
+            
+            // Dimension
 
             var dimX = -1;
             var dimY = -1;
-            var prompt = new TextPrompt<string?>("[aqua][[OPTIONAL]][/] Character box size? ")
-                .AllowEmpty().HideDefaultValue().DefaultValue(null);
-            settings.Size ??= prompt.Show(AnsiConsole.Console);
+            if (settings.Size == null)
+            {
+                var prompt = new TextPrompt<string?>("[aqua][[OPTIONAL]][/] Character box size? ")
+                    .AllowEmpty().HideDefaultValue().DefaultValue(null);
+                settings.Size = prompt.Show(AnsiConsole.Console);
+            }
             
             if (settings.Size is not null)
             {
@@ -94,6 +107,8 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             }
             
             if (settings.Verbose) AnsiConsole.WriteLine("Size: Height {0} x Width {1}", dimX, dimY);
+            
+            // Exclusion
 
             var exclusion = (ExcludeDirection)0;
             if (settings.Exclusion is not null)
@@ -105,12 +120,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                     if (!Enum.TryParse(ex, true, out ExcludeDirection exTmp))
                     {
                         AnsiConsole.MarkupLine("[red]Error:[/] Invalid direction {0}", ex);
-                        const string opString = "Options are: " +
-                            $"{nameof(ExcludeDirection.Up)}, {nameof(ExcludeDirection.Down)}, " +
-                            $"{nameof(ExcludeDirection.Left)}, {nameof(ExcludeDirection.Right)}, " +
-                            $"{nameof(ExcludeDirection.UpLeft)}, {nameof(ExcludeDirection.UpRight)}, " +
-                            $"{nameof(ExcludeDirection.DownLeft)}, {nameof(ExcludeDirection.DownRight)}";
-                        AnsiConsole.WriteLine(opString);
+                        AnsiConsole.WriteLine("Options are: Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight");
                         return -1;
                     }
 
@@ -124,6 +134,8 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             if (settings.NoBack)
                 exclusion |= ExcludeDirection.Left | ExcludeDirection.UpLeft |
                            ExcludeDirection.Up | ExcludeDirection.UpRight;
+            
+            // Main logic
 
             var progressBar = AnsiConsole.Progress()
                 .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
@@ -165,22 +177,20 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 var colorTable = new Table().Title("COLORS", new Style(Color.Yellow))
                     .AddColumn("Color").AddColumn("Level");
 
-                for (var i = 1; i < _colors.Length && i <= maxLevel; i++)
+                for (var i = 1; i < Colors.Length && i <= maxLevel; i++)
                 {
-                    var color = _colors[i];
+                    var color = Colors[i];
                     colorTable.AddRow($"[{color}]{color}[/]",
-                        i != _colors.Length - 1 ? i.ToString() : $"{i}+");
+                        i != Colors.Length - 1 ? i.ToString() : $"{i}+");
                 }
                 
                 var columns = new Columns(wordTable, colorTable);
                 columns.Expand = false;
                 AnsiConsole.Write(columns);
+                return 0;
             }
-            else
-            {
-                AnsiConsole.Write(wordTable);
-            }
-
+            
+            AnsiConsole.Write(wordTable);
             return 0;
         }
         catch (Exception e)
@@ -205,7 +215,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
                 Color color;
                 if (settings.SingleColor)
-                    color = heatmap[index] > 0 ? _colors[1] : _colors[0];
+                    color = heatmap[index] > 0 ? Colors[1] : Colors[0];
                 else
                     color = GetColorForHeatmapLevel(heatmap[index]);
                 
@@ -221,10 +231,10 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
     private Color GetColorForHeatmapLevel(int level)
     {
-        if (level >= _colors.Length)
-            return _colors[_colors.Length - 1];
+        if (level >= Colors.Length)
+            return Colors[Colors.Length - 1];
 
-        return _colors[level];
+        return Colors[level];
     }
 
     private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int width,
@@ -276,7 +286,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
     private IEnumerable<FindResult> RemoveDuplicates(IEnumerable<FindResult> results)
     {
-        var lastWord = string.Empty; // This is normally invalid
+        var lastWord = string.Empty; // This is invalid
 
         foreach (var result in results)
         {
