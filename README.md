@@ -1,6 +1,6 @@
 # WordFinder  
 
-A *flexible - beautiful - simple* cli app to find words form letters  
+A *flexible - beautiful - simple* cli app to find words from letters  
 ## Installation  
 
 1. Clone the repo `git clone https://github.com/LanLP0/WordFinder`
