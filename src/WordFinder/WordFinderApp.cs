@@ -6,7 +6,7 @@ namespace WordFinder;
 
 public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConfig>
 {
-    private static readonly Color[] Colors = {
+    private Color[] _colors = {
         Color.Default,
         Color.Yellow,
         Color.Aqua,
@@ -22,6 +22,12 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
     
     public override int Execute(CommandContext context, WordFinderConfig settings)
     {
+        if (settings.PrintColors)
+        {
+            PrintColors();
+            return 0;
+        }
+
         try
         {
             AnsiConsole.MarkupLine("Press [yellow]Ctrl-C[/] to stop");
@@ -29,13 +35,35 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             if (settings.Verbose)
                 AnsiConsole.WriteLine("Commandline: {0}", Environment.CommandLine);
             
-            // Setup
+            // General Setup
             
             settings.WordListPath = Path.GetFullPath(settings.WordListPath);
             AnsiConsole.MarkupLine("Word list path: {0}", settings.WordListPath);
 
             if (settings.NoWrap)
                 settings.Wrap = false;
+            
+            // Colors
+
+            if (settings.Colors is not null)
+            {
+                var colors = new HashSet<Color>();
+                colors.Add(Color.Default);
+                var part = settings.Colors.Split(',');
+
+                foreach (var p in part)
+                {
+                    if (!WordFinderHelper.TryParseColorFromString(p, out var color, out var error))
+                    {
+                        AnsiConsole.WriteLine("[red]Error:[/] {0}", error);
+                        return -1;
+                    }
+
+                    colors.Add(color.Value);
+                }
+
+                _colors = colors.ToArray();
+            }
             
             // Characters
 
@@ -66,7 +94,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
                 var split = settings.Size.Split('x');
                 if (split.Length is not 2)
                 {
-                    AnsiConsole.MarkupLine("[red]Error:[/] Invalid size format");
+                    AnsiConsole.MarkupLine("[red]Error:[/] Invalid size format (Correct format is: WidthxHeight)");
                     return -1;
                 }
 
@@ -159,10 +187,13 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             if (settings.Verbose) AnsiConsole.WriteLine("{0} Result(s)", results.Length);
 
             var heatmap = BuildCharHeatmap(characters, results, dimX, settings);
+            
+            // Print Result
 
             DisplayHeatmap(characters, heatmap, dimX, dimY, settings);
 
             var wordTable = new Table();
+            wordTable.RoundedBorder();
             wordTable.AddColumn("Word").AddColumn("Position").AddColumn("Direction");
             wordTable.Title("WORDS", new Style(Color.Yellow));
             foreach (var result in results)
@@ -174,14 +205,14 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             if (!settings.SingleColor)
             {
                 var maxLevel = heatmap.Max();
-                var colorTable = new Table().Title("COLORS", new Style(Color.Yellow))
+                var colorTable = new Table().Title("COLORS", new Style(Color.Yellow)).RoundedBorder()
                     .AddColumn("Color").AddColumn("Level");
 
-                for (var i = 1; i < Colors.Length && i <= maxLevel; i++)
+                for (var i = 1; i < _colors.Length && i <= maxLevel; i++)
                 {
-                    var color = Colors[i];
-                    colorTable.AddRow($"[{color}]{color}[/]",
-                        i != Colors.Length - 1 ? i.ToString() : $"{i}+");
+                    var color = _colors[i];
+                    colorTable.AddRow($"[{color.ToMarkup()}]{color.ToMarkup()}[/]",
+                        i != _colors.Length - 1 ? i.ToString() : $"{i}+");
                 }
                 
                 var columns = new Columns(wordTable, colorTable);
@@ -215,7 +246,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
                 Color color;
                 if (settings.SingleColor)
-                    color = heatmap[index] > 0 ? Colors[1] : Colors[0];
+                    color = heatmap[index] > 0 ? _colors[1] : _colors[0];
                 else
                     color = GetColorForHeatmapLevel(heatmap[index]);
                 
@@ -231,10 +262,10 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
 
     private Color GetColorForHeatmapLevel(int level)
     {
-        if (level >= Colors.Length)
-            return Colors[Colors.Length - 1];
+        if (level >= _colors.Length)
+            return _colors[_colors.Length - 1];
 
-        return Colors[level];
+        return _colors[level];
     }
 
     private int[] BuildCharHeatmap(ReadOnlySpan<char> characters, IReadOnlyList<FindResult> results, int width,
@@ -296,5 +327,24 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
             lastWord = result.Word;
             yield return result;
         }
+    }
+    
+    private static void PrintColors()
+    {
+        for (var i = 1; i <= 255; i++)
+        {
+            var color = Color.FromInt32(i);
+
+            var text = new Text(color.ToString(), new Style(foreground: color));
+            AnsiConsole.Write(text);
+            
+            if (i is 255)
+                continue;
+            
+            AnsiConsole.Write(" ");
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteLine("Additionally, hex color (format: #rrggbb) is also supported");
     }
 }

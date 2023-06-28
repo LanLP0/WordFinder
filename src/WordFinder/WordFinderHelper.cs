@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using Spectre.Console;
+
 namespace WordFinder;
 
 public static class WordFinderHelper
@@ -15,5 +18,27 @@ public static class WordFinderHelper
     public static (int x, int y) IndexToPos(int width, int index)
     {
         return (index % width, index / width);
+    }
+    
+    public static bool TryParseColorFromString(string colorString, [NotNullWhen(true)] out Color? color,
+        [NotNullWhen(false)] out string? error)
+    {
+        if (colorString.Contains(' '))
+        {
+            color = default;
+            error = "Color cannot contains whitespace(s)";
+            return false;
+        }
+
+        if (!Style.TryParse(colorString, out var style))
+        {
+            color = default;
+            error = $"Could not find color `{colorString}`";
+            return false;
+        }
+
+        color = style!.Foreground;
+        error = null;
+        return true;
     }
 }

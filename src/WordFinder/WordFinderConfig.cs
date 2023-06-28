@@ -69,6 +69,16 @@ public sealed partial class WordFinderApp
         [CommandOption("--no-backward|--no-back")]
         [DefaultValue(false)]
         public bool NoBack { get; init; }
+        
+        [Description("Color(s) to be used to print the result (Coma seperated list)\n(To see all supported colors, run the program with --print-colors")]
+        [CommandOption("-c|--color")]
+        [DefaultValue(null)]
+        public string? Colors { get; init; }
+        
+        [Description("Prints all supported color")]
+        [CommandOption("--print-colors")]
+        [DefaultValue(false)]
+        public bool PrintColors { get; init; }
 
         public override ValidationResult Validate()
         {

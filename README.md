@@ -30,6 +30,9 @@ OPTIONS:
                                      (Shorthand to exclude UpLeft, UpRight, DownLeft, DownRight)
         --no-backward                Don't search backward
                                      (Shorthand to exclude Left, UpLeft, Up, UpRight)
+    -c, --color                      Color(s) to be used to print the result (Coma seperated list)
+                                     (To see all supported colors, run the program with --print-colors
+        --print-colors               Prints all supported color
 ```
 ## Contributing  
 
