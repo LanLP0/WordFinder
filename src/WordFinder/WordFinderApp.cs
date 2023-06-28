@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -20,7 +21,7 @@ public sealed partial class WordFinderApp : Command<WordFinderApp.WordFinderConf
         Color.Navy
     };
     
-    public override int Execute(CommandContext context, WordFinderConfig settings)
+    public override int Execute([NotNull] CommandContext context,[NotNull]  WordFinderConfig settings)
     {
         if (settings.PrintColors)
         {

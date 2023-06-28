@@ -15,11 +15,11 @@ public sealed partial class WordFinderApp
         [Description("Size of character box (WidthxHeight)")]
         [CommandArgument(1, "[size]")]
         public string? Size { get; set; }
-        
+
         [Description("Path to word list file (default: words.txt)")]
         [CommandArgument(2, "[wordListPath]")]
         [DefaultValue("words.txt")]
-        public string WordListPath { get; set; }
+        public string WordListPath { get; set; } = "words.txt";
 
         [CommandOption("-v|--verbose")]
         [DefaultValue(false)]

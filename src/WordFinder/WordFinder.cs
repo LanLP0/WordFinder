@@ -6,7 +6,9 @@ public sealed class WordFinder
 {
     private string[] _words;
 
+#pragma warning disable CS8618
     public WordFinder(string pathToWordFile, int minLetter, Progress progressBar)
+#pragma warning restore CS8618
     {
         progressBar.Start(ctx =>
         {
@@ -71,28 +73,28 @@ public sealed class WordFinder
 
                 var (x, y) = WordFinderHelper.IndexToPos(dimX, i);
                 
-                if (!exclusion.HasFlagFast(ExcludeDirection.Up) && CheckUp(chars, dimX, x, y, 0, word))
+                if (!exclusion.HasFlagFast(ExcludeDirection.Up) && CheckUp(chars, dimX, x, y, word))
                     results.Add(new FindResult(i, Direction.Up, word));
 
-                if (!exclusion.HasFlagFast(ExcludeDirection.Down) && CheckDown(chars, dimX, dimY, x, y, 0, word))
+                if (!exclusion.HasFlagFast(ExcludeDirection.Down) && CheckDown(chars, dimX, dimY, x, y, word))
                     results.Add(new FindResult(i, Direction.Down, word));
                     
-                if (!exclusion.HasFlagFast(ExcludeDirection.Left) && CheckLeft(chars, dimX, i, 0, word, wrap))
+                if (!exclusion.HasFlagFast(ExcludeDirection.Left) && CheckLeft(chars, dimX, i, word, wrap))
                     results.Add(new FindResult(i, Direction.Left, word));
                 
-                if (!exclusion.HasFlagFast(ExcludeDirection.Right) && CheckRight(chars, dimX, i, 0, word, wrap))
+                if (!exclusion.HasFlagFast(ExcludeDirection.Right) && CheckRight(chars, dimX, i, word, wrap))
                     results.Add(new FindResult(i, Direction.Right, word));
                 
-                if (!exclusion.HasFlagFast(ExcludeDirection.UpLeft) && CheckUpLeft(chars, dimX, dimY, x, y, 0, word))
+                if (!exclusion.HasFlagFast(ExcludeDirection.UpLeft) && CheckUpLeft(chars, dimX, dimY, x, y, word))
                     results.Add(new FindResult(i, Direction.UpLeft, word));
 
-                if (!exclusion.HasFlagFast(ExcludeDirection.UpRight) && CheckUpRight(chars, dimX, dimY, x, y, 0, word))
+                if (!exclusion.HasFlagFast(ExcludeDirection.UpRight) && CheckUpRight(chars, dimX, dimY, x, y, word))
                     results.Add(new FindResult(i, Direction.UpRight, word));
 
-                if (!exclusion.HasFlagFast(ExcludeDirection.DownLeft) && CheckDownLeft(chars, dimX, dimY, x, y, 0, word))
+                if (!exclusion.HasFlagFast(ExcludeDirection.DownLeft) && CheckDownLeft(chars, dimX, dimY, x, y, word))
                     results.Add(new FindResult(i, Direction.DownLeft, word));
 
-                if (!exclusion.HasFlagFast(ExcludeDirection.DownRight) && CheckDownRight(chars, dimX, dimY, x, y, 0, word))
+                if (!exclusion.HasFlagFast(ExcludeDirection.DownRight) && CheckDownRight(chars, dimX, dimY, x, y, word))
                     results.Add(new FindResult(i, Direction.DownRight, word));
             }
         }
@@ -100,8 +102,9 @@ public sealed class WordFinder
         return results.AsReadOnly();
     }
 
-    private bool CheckUp(ReadOnlySpan<char> chars, int dimX, int x, int y, int i, string word)
+    private bool CheckUp(ReadOnlySpan<char> chars, int dimX, int x, int y, string word)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
@@ -119,8 +122,9 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckDown(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    private bool CheckDown(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, string word)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
@@ -138,9 +142,10 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckLeft(ReadOnlySpan<char> chars, int width, int index, int i, string word, bool wrap)
+    private bool CheckLeft(ReadOnlySpan<char> chars, int width, int index, string word, bool wrap)
     {
-        for (;;)
+        var i = 0;
+        for(;;)
         {
             if (i >= word.Length)
                 return true;
@@ -159,8 +164,9 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckRight(ReadOnlySpan<char> chars, int width, int index, int i, string word, bool wrap)
+    private bool CheckRight(ReadOnlySpan<char> chars, int width, int index, string word, bool wrap)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
@@ -181,8 +187,9 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckUpLeft(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    private bool CheckUpLeft(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, string word)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
@@ -201,8 +208,9 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckUpRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    private bool CheckUpRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, string word)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
@@ -221,8 +229,9 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckDownLeft(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    private bool CheckDownLeft(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, string word)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
@@ -241,8 +250,9 @@ public sealed class WordFinder
         }
     }
 
-    private bool CheckDownRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, int i, string word)
+    private bool CheckDownRight(ReadOnlySpan<char> chars, int dimX, int dimY, int x, int y, string word)
     {
+        var i = 0;
         for (;;)
         {
             if (i >= word.Length)
