@@ -55,17 +55,17 @@ public sealed partial class WordFinderApp
         [DefaultValue(false)]
         public bool NoWrap { get; init; }
         
-        [Description("Direction(s) to exclude searching from (coma seperated list)\n(Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)")]
+        [Description("Direction(s) to exclude searching from (Coma seperated list)\n(Options: Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)")]
         [CommandOption("-e|--exclude")]
         [DefaultValue(null)]
         public string? Exclusion { get; init; }
 
-        [Description("Don't search along diagonals (shorthand)")]
+        [Description("Don't search along diagonals\n(Shorthand to exclude UpLeft, UpRight, DownLeft, DownRight)")]
         [CommandOption("--no-diag|--no-diagonal")]
         [DefaultValue(false)]
         public bool NoDiag { get; init; }
         
-        [Description("Don't search backward (shorthand)")]
+        [Description("Don't search backward\n(Shorthand to exclude Left, UpLeft, Up, UpRight)")]
         [CommandOption("--no-backward|--no-back")]
         [DefaultValue(false)]
         public bool NoBack { get; init; }

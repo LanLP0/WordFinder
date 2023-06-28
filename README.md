@@ -24,10 +24,12 @@ OPTIONS:
     -s, --single-color               Only use one color to display the result
     -w, --wrap            True       Allow words to be wrapped around the left and right side of the character box
         --no-wrap                    Turn off wrapping (This have higher priority than --wrap)
-    -e, --exclude                    Direction(s) to exclude searching from (coma seperated list)
-                                     (Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)
-        --no-diag                    Don't search along diagonals (shorthand)
-        --no-backward                Don't search backward (shorthand)
+    -e, --exclude                    Direction(s) to exclude searching from (Coma seperated list)
+                                     (Options: Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)
+        --no-diag                    Don't search along diagonals
+                                     (Shorthand to exclude UpLeft, UpRight, DownLeft, DownRight)
+        --no-backward                Don't search backward
+                                     (Shorthand to exclude Left, UpLeft, Up, UpRight)
 ```
 ## Contributing  
 
