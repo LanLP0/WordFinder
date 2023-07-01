@@ -17,7 +17,7 @@ public sealed partial class WordFinderApp
         public string? Size { get; set; }
 
         [Description("Path to word list file (default: words.txt)")]
-        [CommandArgument(2, "[wordListPath]")]
+        [CommandOption("-W|--words")]
         [DefaultValue("words.txt")]
         public string WordListPath { get; set; } = "words.txt";
 
