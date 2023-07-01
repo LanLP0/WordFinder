@@ -19,7 +19,7 @@ public sealed partial class WordFinderApp
         [Description("Path to word list file (default: words.txt)")]
         [CommandOption("-W|--words")]
         [DefaultValue("words.txt")]
-        public string WordListPath { get; set; } = "words.txt";
+        public string WordListPath { get; set; }
 
         [CommandOption("-v|--verbose")]
         [DefaultValue(false)]
